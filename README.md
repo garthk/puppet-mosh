@@ -3,7 +3,7 @@ Puppet module for [Mosh].
 ## Installation
 
     cd /etc/puppet/modules
-    git clone git clone git://github.com/garthk/puppet-mosh mosh
+    git clone git://github.com/garthk/puppet-mosh mosh
 
 ## Usage
 
