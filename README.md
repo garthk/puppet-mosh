@@ -11,12 +11,10 @@ Puppet module for [Mosh].
 
 The class will:
 
-* Perform `apt-get update`
-* Install `python-software-properties` for `add-apt-repository`
+* Import [Keith's key][7BF6DFCD] from `keyserver.ubuntu.com`
 * Add [ppa:keithw/mosh] to your `apt` sources via a file in
   `/etc/apt/sources.list.d`
-* Import [Keith's key][7BF6DFCD] from `keyserver.ubuntu.com`
-* Perform `apt-get update` again
+* Perform `apt-get update`
 * Install `language-pack-en-base`
 * Install [Mosh]
 

@@ -1,29 +1,46 @@
 class mosh {
-  $key = "7BF6DFCD"
-  exec { 'apt-key keithw':
-    path    => "/bin:/usr/bin",
-    onlyif  => "apt-key list | grep '${key}'",
-    command => "apt-key adv --keyserver keyserver.ubuntu.com --recv-keys ${key}",
-  }
+  $package = 'mosh'
+  $reponame = 'keithw-mosh'
+  $repokey = '7BF6DFCD'
+  $keyserver = 'keyserver.ubuntu.com'
+  $repository = "deb http://ppa.launchpad.net/keithw/mosh/ubuntu ${lsbdistcodename} main\n"
 
-  ppa { 'ppa:keithw/mosh':
-    user    => 'keithw',
-    package => 'mosh',
-    require => Exec['apt-key keithw'],
-  }
-
-  package { 'language-pack-en-base':
+  package { $package:
     ensure => installed,
-    notify => Exec['dpkg-reconfigure locales'],
   }
 
-  exec { 'dpkg-reconfigure locales':
-    refreshonly => true,
-    command     => "/usr/sbin/dpkg-reconfigure locales",
-  }
+  if ($repository and $::operatingsystem == 'Ubuntu') {
+    # friendly unique titles
+    $_repokey = "get ${repokey} from ${keyserver}"
+    $_update  = "apt-get update for ${reponame}"
+    $_source  = "/etc/apt/sources.list.d/${reponame}.list"
 
-  package { 'mosh':
-    ensure  => installed,
-    require => Ppa['ppa:keithw/mosh'],
+    # fetch the key
+    exec { $_repokey:
+      path    => '/bin:/usr/bin',
+      unless  => "apt-key list | grep '${repokey}'",
+      command => "apt-key adv --keyserver ${keyserver} --recv-keys ${repokey}",
+    }
+
+    # add the source
+    file { $_source:
+      ensure  => present,
+      content => "${repository}\n",
+    }
+
+    # apt-get update if it hasn't been done since adding the source
+    $find_newer_lists = "find /var/lib/apt/lists -type f -cnewer ${_source}"
+    exec { $_update:
+      path    => '/usr/bin',
+      command => 'apt-get update',
+      onlyif  => "test -z \"\$(${find_newer_lists})\"",
+      timeout => 3600,
+      require => [Exec[$_repokey], File[$_source]],
+    }
+
+    # tell the package to depend on the update check
+    Package[$package] {
+      require +> Exec[$_update],
+    }
   }
 }
